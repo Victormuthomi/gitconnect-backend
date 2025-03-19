@@ -1,36 +1,25 @@
-version: "3.7"
+version: "3.8"
 
 services:
-  # Backend service
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8090:8090" # Expose port 8080 for the backend
-    env_file:
-      - .env # Load environment variables from the .env file
+    build: .
+    ports: ["8090:8090"]
+    env_file: .env
     depends_on:
       - database
-    networks:
-      - app_network
+    networks: ["app_network"]
 
-  # PostgreSQL Database service
   database:
     image: postgres:13
-    env_file:
-      - .env # Load environment variables from the .env file
-    ports:
-      - "5430:5430"
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    networks:
-      - app_network
+    env_file: .env
+    ports: ["5430:5432"]
+    volumes: ["db_data:/var/lib/postgresql/data"]
+    networks: ["app_network"]
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust # Allow passwordless connections
 
-# Volumes to persist data
 volumes:
   db_data:
 
-# Networks
 networks:
   app_network:
