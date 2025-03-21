@@ -8,6 +8,7 @@ import (
 	"gitconnect-backend/config"
 	"gitconnect-backend/routes"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -15,7 +16,7 @@ import (
 
 // @title GitConnect API
 // @version 1.0
-// @description This is the API documentation for GitConnect.
+// @description API documentation for GitConnect
 // @termsOfService http://swagger.io/terms/
 // @contact.name Victor Muthomi
 // @contact.email victor@example.com
@@ -25,7 +26,7 @@ import (
 // @BasePath /api
 
 func main() {
-	// Set Gin mode, default to "debug" if not set
+	// Set Gin mode
 	mode := os.Getenv("GIN_MODE")
 	if mode == "" {
 		mode = "debug"
@@ -45,6 +46,14 @@ func main() {
 	// Fix proxy warning
 	router.SetTrustedProxies(nil)
 
+	// Enable CORS for frontend communication
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173"}, // Change to frontend URL in production
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}))
+
 	// Register routes
 	routes.AuthRoutes(router)
 	routes.PostRoutes(router)
@@ -58,9 +67,12 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	
-	log.Printf("✅ Server running on port %s", port)
-	if err := router.Run(":" + port); err != nil {
+
+	// Bind to 0.0.0.0 to allow connections from Docker
+	serverAddr := "0.0.0.0:" + port
+	log.Printf("✅ Server running on %s", serverAddr)
+
+	if err := router.Run(serverAddr); err != nil {
 		log.Fatalf("❌ Failed to start server: %v", err)
 	}
 }

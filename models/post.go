@@ -11,6 +11,7 @@ type Post struct {
 	User      User      `json:"user" gorm:"foreignKey:UserID"` // Establish relation
 	Likes     int       `json:"likes" gorm:"default:0"`
 	Dislikes  int       `json:"dislikes" gorm:"default:0"`
+	Comments  []Comment `json:"comments" gorm:"foreignKey:PostID;constraint:OnDelete:CASCADE;"` // Comments linked to post
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
