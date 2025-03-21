@@ -6,17 +6,26 @@ services:
     ports: ["8080:8080"]
     env_file: .env
     depends_on:
-      - database
-    networks: ["app_network"]
+      database:
+        condition: service_healthy # Ensures database is ready before backend starts
+    networks:
+      - app_network
 
   database:
     image: postgres:13
     env_file: .env
     ports: ["5430:5432"]
-    volumes: ["db_data:/var/lib/postgresql/data"]
-    networks: ["app_network"]
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - app_network
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust # Allow passwordless connections
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   db_data:

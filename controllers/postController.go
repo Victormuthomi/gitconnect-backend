@@ -332,8 +332,12 @@ func GetCommentsForPost(c *gin.Context) {
 	}
 
 	var comments []models.Comment
-	// Fetch comments for the post
-	if err := config.DB.Where("post_id = ?", postID).Preload("User").Find(&comments).Error; err != nil {
+	// Fetch comments with associated Post and User details
+	if err := config.DB.
+		Preload("Post").   // Load post details
+		Preload("User").   // Load user details
+		Where("post_id = ?", postID).
+		Find(&comments).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch comments"})
 		return
 	}
