@@ -10,6 +10,7 @@ type Profile struct {
 	FullName  string    `json:"full_name" binding:"required"`
 	Bio       string    `json:"bio"`
 	Github    string    `json:"github"`
+  ProfilePicture string   `json:"profile_picture"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
