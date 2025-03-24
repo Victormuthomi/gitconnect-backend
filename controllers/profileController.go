@@ -139,3 +139,76 @@ func DeleteProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Profile deleted successfully"})
 }
 
+// UploadProfilePicture handles profile picture uploads
+func UploadProfilePicture(w http.ResponseWriter, r *http.Request) {
+	// Maximum file size for the profile picture (e.g., 5MB)
+	const MaxFileSize = 5 << 20 // 5MB
+
+	// Parse the multipart form (this will extract the file from the request)
+	err := r.ParseMultipartForm(MaxFileSize)
+	if err != nil {
+		http.Error(w, "Error parsing form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Get the file from the form
+	file, _, err := r.FormFile("profile_picture")
+	if err != nil {
+		http.Error(w, "Error getting file: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Define the allowed file types (e.g., JPEG, PNG)
+	allowedFileTypes := []string{"image/jpeg", "image/png"}
+	// Get the file's MIME type
+	contentType := r.Header.Get("Content-Type")
+
+	// Validate the file type
+	if !contains(allowedFileTypes, contentType) {
+		http.Error(w, "Invalid file type. Only JPEG and PNG are allowed.", http.StatusBadRequest)
+		return
+	}
+
+	// Generate a unique filename to avoid overwriting
+	// You can use a UUID, timestamp, or user ID here
+	fileName := fmt.Sprintf("%d_%s", time.Now().Unix(), "profile.jpg") // Simple naming, change as needed
+
+	// Define the path where you want to store the file
+	filePath := filepath.Join("uploads", fileName)
+
+	// Create the file on the server
+	outFile, err := os.Create(filePath)
+	if err != nil {
+		http.Error(w, "Error saving file: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer outFile.Close()
+
+	// Copy the content of the uploaded file to the new file
+	_, err = io.Copy(outFile, file)
+	if err != nil {
+		http.Error(w, "Error saving file content: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Respond with a success message and the file path
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	response := map[string]interface{}{
+		"message": "Profile picture uploaded successfully",
+		"file_path": filePath, // You can also store this URL in the database to associate it with the user's profile
+	}
+	json.NewEncoder(w).Encode(response)
+}
+
+// Utility function to check if a string exists in a list
+func contains(slice []string, str string) bool {
+	for _, item := range slice {
+		if item == str {
+			return true
+		}
+	}
+	return false
+}
+
