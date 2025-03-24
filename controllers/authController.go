@@ -43,15 +43,37 @@ func Register(c *gin.Context) {
 		Password: string(hashedPassword),
 	}
 
-	// Save to DB
-	result := config.DB.Create(&user)
-	if result.Error != nil {
+	// Save user to DB
+	if err := config.DB.Create(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+	// Automatically create a profile linked to the new user
+	profile := models.Profile{
+		UserID: user.ID,
+	}
+
+	if err := config.DB.Create(&profile).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create profile"})
+		return
+	}
+
+	// Return user and profile info
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "User registered successfully",
+		"user": gin.H{
+			"id":       user.ID,
+			"username": user.Username,
+			"email":    user.Email,
+		},
+		"profile": gin.H{
+			"id":     profile.ID,
+			"user_id": profile.UserID,
+		},
+	})
 }
+
 
 // @Summary Login user
 // @Description Authenticates a user and returns a JWT token
