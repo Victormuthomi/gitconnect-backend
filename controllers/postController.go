@@ -324,24 +324,25 @@ func CommentOnPost(c *gin.Context) {
 // @Failure 500 {object} map[string]string
 // @Router /api/posts/{id}/comments [get]
 func GetCommentsForPost(c *gin.Context) {
-	// Get post ID from params
-	postID, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
-		return
-	}
+    postID, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid post ID"})
+        return
+    }
 
-	var comments []models.Comment
-	// Fetch comments with associated Post and User details
-	if err := config.DB.
-		Preload("Post").   // Load post details
-		Preload("User").   // Load user details
-		Where("post_id = ?", postID).
-		Find(&comments).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch comments"})
-		return
-	}
+    var comments []models.Comment
 
-	c.JSON(http.StatusOK, gin.H{"comments": comments})
+    // Fetch comments with Post and User details only if necessary
+    query := config.DB.Where("post_id = ?", postID)
+
+    // Remove Preload if it's causing issues
+    query = query.Preload("User") // If User exists, keep this
+
+    if err := query.Find(&comments).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch comments"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"comments": comments})
 }
 
