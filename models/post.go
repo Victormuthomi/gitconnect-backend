@@ -5,7 +5,6 @@ import "time"
 // Post represents a post in the system
 type Post struct {
 	ID        uint      `json:"id" gorm:"primaryKey;autoIncrement"`
-	Title     string    `json:"title" binding:"required"`
 	Content   string    `json:"content" binding:"required"`
 	UserID    uint      `json:"user_id" gorm:"not null;index"` // Foreign key for users
 	User      User      `json:"user" gorm:"foreignKey:UserID"` // Establish relation
