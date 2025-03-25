@@ -40,8 +40,12 @@ func main() {
 	router.Use(gin.Logger(), gin.Recovery())
 	router.SetTrustedProxies(nil)
 
+	// Updated CORS configuration
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"https://adequate-rejoicing-production.up.railway.app/, https://gitconnect-frontend.vercel.app/"}, // Adjust in production
+		AllowOrigins: []string{
+			"https://adequate-rejoicing-production.up.railway.app",
+			"https://gitconnect-frontend.vercel.app",
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
