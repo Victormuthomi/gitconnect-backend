@@ -22,9 +22,8 @@ import (
 // @contact.email victor@example.com
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
-// @host localhost:8080
+// @host 0.0.0.0:8080
 // @BasePath /api
-
 func main() {
 	// Set Gin mode
 	mode := os.Getenv("GIN_MODE")
@@ -42,13 +41,11 @@ func main() {
 	// Initialize Gin router
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
-
-	// Fix proxy warning
 	router.SetTrustedProxies(nil)
 
 	// Enable CORS for frontend communication
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // Change to frontend URL in production
+		AllowOrigins:     []string{"http://localhost:5173"}, // Change for production as needed
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
@@ -68,7 +65,7 @@ func main() {
 		port = "8080"
 	}
 
-	// Bind to 0.0.0.0 to allow connections from Docker
+	// Bind to 0.0.0.0 for Docker & Railway
 	serverAddr := "0.0.0.0:" + port
 	log.Printf("✅ Server running on %s", serverAddr)
 
