@@ -11,7 +11,7 @@ func ProfileRoutes(router *gin.Engine) {
 	router.GET("/api/profiles", controllers.GetProfiles)
 	
 	// Public route: Serve profile image
-	router.GET("/api/profiles/:id/image", controllers.GetProfileImage)
+//	router.GET("/api/profiles/:id/image", controllers.GetProfileImage)
 
 	// Protected routes
 	protected := router.Group("/api/profiles").Use(middlewares.AuthMiddleware()) // Apply AuthMiddleware to this group
@@ -26,7 +26,7 @@ func ProfileRoutes(router *gin.Engine) {
 		protected.PUT("/:id", controllers.UpdateProfile)
 
 		// Upload a profile image (protected)
-		protected.POST("/:id/image", controllers.UploadProfileImage)
+		//protected.POST("/:id/image", controllers.UploadProfileImage)
 	}
 }
 

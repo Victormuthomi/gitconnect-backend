@@ -3,9 +3,6 @@ package controllers
 import (
 	"fmt"
 	"net/http"
-  "os"          // For file system operations
-	"path/filepath" // For constructing file paths
-	"time"
 
 	"gitconnect-backend/config"
 	"gitconnect-backend/models"
@@ -142,8 +139,8 @@ func DeleteProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Profile deleted successfully"})
 }
 
+/*
 // UploadProfileImage handles uploading a profile image for a given user.
-// Expected to receive a multipart form with a field "image".
 // @Summary Upload Profile Image
 // @Description Upload a profile image for the given user. Expects a multipart form with the field "image".
 // @Tags Profile
@@ -156,40 +153,28 @@ func DeleteProfile(c *gin.Context) {
 // @Failure 500 {object} map[string]interface{} "Failed to save image or update profile picture"
 // @Router /api/profiles/{userId}/image [post]
 func UploadProfileImage(c *gin.Context) {
-	// Get the userId from the route parameters
 	userId := c.Param("userId")
 
-	// Retrieve the file from the form data.
 	file, err := c.FormFile("image")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Image file is required"})
 		return
 	}
 
-	// Generate a unique file name (e.g., prepend current timestamp).
 	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), file.Filename)
-
-	// Define the upload directory.
 	uploadDir := "uploads"
 
-	// Ensure the upload directory exists.
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
-		if err = os.Mkdir(uploadDir, os.ModePerm); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create uploads directory"})
-			return
-		}
+		os.Mkdir(uploadDir, os.ModePerm)
 	}
 
-	// Construct the full path.
 	fullPath := filepath.Join(uploadDir, filename)
 
-	// Save the uploaded file to disk.
 	if err := c.SaveUploadedFile(file, fullPath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
 		return
 	}
 
-	// Update the user's profile in the database with the new profile picture.
 	if err := models.UpdateProfilePicture(userId, filename); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile picture"})
 		return
@@ -201,31 +186,77 @@ func UploadProfileImage(c *gin.Context) {
 	})
 }
 
-// GetProfileImage serves the profile image file for a given user.
-// @Summary Get Profile Image
-// @Description Serve the profile image file for the given user.
+// UpdateProfilePicture handles profile picture uploads.
+// @Summary Update Profile Picture
+// @Description Upload a new profile picture for the user.
 // @Tags Profile
-// @Produce image/jpeg, image/png, image/gif, application/octet-stream
+// @Accept multipart/form-data
+// @Produce json
 // @Param userId path string true "User ID"
-// @Success 200 {file} file "Returns the profile image file"
+// @Param file formData file true "Profile Picture"
+// @Success 200 {object} map[string]interface{} "Successfully uploaded"
+// @Failure 400 {object} map[string]interface{} "File upload failed"
+// @Failure 500 {object} map[string]interface{} "Failed to save image or update profile picture"
+// @Router /api/profiles/{userId}/upload [post]
+func UpdateProfilePicture(c *gin.Context) {
+	userId := c.Param("userId")
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File upload failed"})
+		return
+	}
+
+	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), file.Filename)
+	uploadDir := "uploads"
+
+	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
+		os.Mkdir(uploadDir, os.ModePerm)
+	}
+
+	fullPath := filepath.Join(uploadDir, filename)
+
+	if err := c.SaveUploadedFile(file, fullPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
+		return
+	}
+
+	if err := models.UpdateProfilePicture(userId, filename); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile picture"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "Profile picture updated successfully",
+		"filename": filename,
+	})
+}
+
+// GetProfileImage serves the profile image for a given user.
+// @Summary Get Profile Image
+// @Description Serve the profile image for the given user.
+// @Tags Profile
+// @Produce image/*
+// @Param userId path string true "User ID"
+// @Success 200 {file} file "Returns the profile image"
 // @Failure 404 {object} map[string]interface{} "Profile or image not found"
 // @Router /api/profiles/{userId}/image [get]
 func GetProfileImage(c *gin.Context) {
 	userId := c.Param("userId")
 
-	// Retrieve the profile from the database using a model function.
 	profile, err := models.GetProfileByID(userId)
-	if err != nil || profile == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Profile not found"})
+	if err != nil || profile == nil || profile.ProfilePicture == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Profile or image not found"})
 		return
 	}
 
-	if profile.ProfilePicture == "" {
-		c.JSON(http.StatusNotFound, gin.H{"error": "No profile picture available"})
-		return
-	}
-
-	// Construct the path to the image file.
 	imagePath := filepath.Join("uploads", profile.ProfilePicture)
+
+	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Image not found"})
+		return
+	}
+
 	c.File(imagePath)
 }
+*/
