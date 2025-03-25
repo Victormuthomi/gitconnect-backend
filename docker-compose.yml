@@ -6,20 +6,8 @@ services:
     ports:
       - "8080:8080"
     env_file: .env
-    depends_on:
-      database:
-        condition: service_healthy
     networks:
       - app_network
-
-  database:
-    image: postgres:13
-    env_file: .env
-    ports:
-      - "5430:5432"  # Expose locally on port 5430 to avoid conflicts with other services\n    volumes:\n      - db_data:/var/lib/postgresql/data\n    networks:\n      - app_network\n    environment:\n      - POSTGRES_HOST_AUTH_METHOD=trust\n      - POSTGRES_DB=gitconnect\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U postgres\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5
-
-volumes:
-  db_data:
 
 networks:
   app_network:
