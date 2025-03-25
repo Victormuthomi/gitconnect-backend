@@ -3,24 +3,26 @@ version: "3.8"
 services:
   backend:
     build: .
-    ports: ["8080:8080"]
+    ports:
+      - "8080:8080"
     env_file: .env
     depends_on:
       database:
-        condition: service_healthy # Ensures database is ready before backend starts
+        condition: service_healthy
     networks:
       - app_network
 
   database:
     image: postgres:13
     env_file: .env
-    ports: ["5430:5432"]
+    ports:
+      - "5430:5432" # Expose locally on port 5430 to avoid conflicts with other services
     volumes:
       - db_data:/var/lib/postgresql/data
     networks:
       - app_network
     environment:
-      - POSTGRES_HOST_AUTH_METHOD=trust # Allow passwordless connections
+      - POSTGRES_HOST_AUTH_METHOD=trust
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
