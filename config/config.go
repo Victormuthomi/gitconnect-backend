@@ -15,10 +15,8 @@ var DB *gorm.DB
 
 // ConnectDatabase initializes and connects to the database.
 func ConnectDatabase() error {
-	// Load environment variables from .env file (if present)
-	if err := godotenv.Load(); err != nil {
-		log.Println("⚠️ Warning: .env file not found, using system environment variables.")
-	}
+	// Load environment variables from .env file (for local development)
+	_ = godotenv.Load()
 
 	// Check for Railway's DATABASE_URL first.
 	databaseURL := os.Getenv("DATABASE_URL")
@@ -49,14 +47,12 @@ func ConnectDatabase() error {
 			return fmt.Errorf("❌ Missing required database environment variables: %v", missingVars)
 		}
 
-		dsn = fmt.Sprintf(
-			"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-			dbHost, dbUser, dbPassword, dbName, dbPort, dbSSLMode,
-		)
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+			dbHost, dbUser, dbPassword, dbName, dbPort, dbSSLMode)
 		log.Println("🔧 Using local database configuration")
 	}
 
-	// Connect to the database
+	// Connect to the database with connection pooling
 	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		PrepareStmt: true,
 	})

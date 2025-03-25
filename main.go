@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	_ "gitconnect-backend/docs" // Import Swagger docs
+	_ "gitconnect-backend/docs" // Swagger docs
 	"gitconnect-backend/config"
 	"gitconnect-backend/routes"
 
@@ -25,14 +25,14 @@ import (
 // @host 0.0.0.0:8080
 // @BasePath /api
 func main() {
-	// Set Gin mode
+	// Set Gin mode (debug for local, release for production)
 	mode := os.Getenv("GIN_MODE")
 	if mode == "" {
 		mode = "debug"
 	}
 	gin.SetMode(mode)
 
-	// Initialize database
+	// Initialize the database
 	if err := config.ConnectDatabase(); err != nil {
 		log.Fatalf("❌ Database connection failed: %v", err)
 	}
@@ -51,7 +51,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	// Register routes
+	// Register API routes
 	routes.AuthRoutes(router)
 	routes.PostRoutes(router)
 	routes.ProfileRoutes(router)
