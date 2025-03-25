@@ -3,6 +3,9 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+  "os"          // For file system operations
+	"path/filepath" // For constructing file paths
+	"time"
 
 	"gitconnect-backend/config"
 	"gitconnect-backend/models"
@@ -163,7 +166,7 @@ func UploadProfileImage(c *gin.Context) {
 		return
 	}
 
-	// Generate a unique file name (for example, prepend current timestamp).
+	// Generate a unique file name (e.g., prepend current timestamp).
 	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), file.Filename)
 
 	// Define the upload directory.
