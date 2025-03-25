@@ -139,76 +139,90 @@ func DeleteProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Profile deleted successfully"})
 }
 
-// UploadProfilePicture handles profile picture uploads
-func UploadProfilePicture(w http.ResponseWriter, r *http.Request) {
-	// Maximum file size for the profile picture (e.g., 5MB)
-	const MaxFileSize = 5 << 20 // 5MB
+// UploadProfileImage handles uploading a profile image for a given user.
+// Expected to receive a multipart form with a field "image".
+// @Summary Upload Profile Image
+// @Description Upload a profile image for the given user. Expects a multipart form with the field "image".
+// @Tags Profile
+// @Accept multipart/form-data
+// @Produce json
+// @Param userId path string true "User ID"
+// @Param image formData file true "Profile Image"
+// @Success 200 {object} map[string]interface{} "Profile image uploaded successfully"
+// @Failure 400 {object} map[string]interface{} "Image file is required"
+// @Failure 500 {object} map[string]interface{} "Failed to save image or update profile picture"
+// @Router /api/profiles/{userId}/image [post]
+func UploadProfileImage(c *gin.Context) {
+	// Get the userId from the route parameters
+	userId := c.Param("userId")
 
-	// Parse the multipart form (this will extract the file from the request)
-	err := r.ParseMultipartForm(MaxFileSize)
+	// Retrieve the file from the form data.
+	file, err := c.FormFile("image")
 	if err != nil {
-		http.Error(w, "Error parsing form: "+err.Error(), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Image file is required"})
 		return
 	}
 
-	// Get the file from the form
-	file, _, err := r.FormFile("profile_picture")
-	if err != nil {
-		http.Error(w, "Error getting file: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-	defer file.Close()
+	// Generate a unique file name (for example, prepend current timestamp).
+	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), file.Filename)
 
-	// Define the allowed file types (e.g., JPEG, PNG)
-	allowedFileTypes := []string{"image/jpeg", "image/png"}
-	// Get the file's MIME type
-	contentType := r.Header.Get("Content-Type")
+	// Define the upload directory.
+	uploadDir := "uploads"
 
-	// Validate the file type
-	if !contains(allowedFileTypes, contentType) {
-		http.Error(w, "Invalid file type. Only JPEG and PNG are allowed.", http.StatusBadRequest)
-		return
-	}
-
-	// Generate a unique filename to avoid overwriting
-	// You can use a UUID, timestamp, or user ID here
-	fileName := fmt.Sprintf("%d_%s", time.Now().Unix(), "profile.jpg") // Simple naming, change as needed
-
-	// Define the path where you want to store the file
-	filePath := filepath.Join("uploads", fileName)
-
-	// Create the file on the server
-	outFile, err := os.Create(filePath)
-	if err != nil {
-		http.Error(w, "Error saving file: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer outFile.Close()
-
-	// Copy the content of the uploaded file to the new file
-	_, err = io.Copy(outFile, file)
-	if err != nil {
-		http.Error(w, "Error saving file content: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Respond with a success message and the file path
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	response := map[string]interface{}{
-		"message": "Profile picture uploaded successfully",
-		"file_path": filePath, // You can also store this URL in the database to associate it with the user's profile
-	}
-	json.NewEncoder(w).Encode(response)
-}
-
-// Utility function to check if a string exists in a list
-func contains(slice []string, str string) bool {
-	for _, item := range slice {
-		if item == str {
-			return true
+	// Ensure the upload directory exists.
+	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
+		if err = os.Mkdir(uploadDir, os.ModePerm); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Unable to create uploads directory"})
+			return
 		}
 	}
-	return false
+
+	// Construct the full path.
+	fullPath := filepath.Join(uploadDir, filename)
+
+	// Save the uploaded file to disk.
+	if err := c.SaveUploadedFile(file, fullPath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
+		return
+	}
+
+	// Update the user's profile in the database with the new profile picture.
+	if err := models.UpdateProfilePicture(userId, filename); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile picture"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "Profile image uploaded successfully",
+		"filename": filename,
+	})
 }
 
+// GetProfileImage serves the profile image file for a given user.
+// @Summary Get Profile Image
+// @Description Serve the profile image file for the given user.
+// @Tags Profile
+// @Produce image/jpeg, image/png, image/gif, application/octet-stream
+// @Param userId path string true "User ID"
+// @Success 200 {file} file "Returns the profile image file"
+// @Failure 404 {object} map[string]interface{} "Profile or image not found"
+// @Router /api/profiles/{userId}/image [get]
+func GetProfileImage(c *gin.Context) {
+	userId := c.Param("userId")
+
+	// Retrieve the profile from the database using a model function.
+	profile, err := models.GetProfileByID(userId)
+	if err != nil || profile == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Profile not found"})
+		return
+	}
+
+	if profile.ProfilePicture == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No profile picture available"})
+		return
+	}
+
+	// Construct the path to the image file.
+	imagePath := filepath.Join("uploads", profile.ProfilePicture)
+	c.File(imagePath)
+}

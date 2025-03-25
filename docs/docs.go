@@ -982,6 +982,97 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/profiles/{userId}/image": {
+            "get": {
+                "description": "Serve the profile image file for the given user.",
+                "produces": [
+                    "image/jpeg",
+                    " image/png",
+                    " image/gif",
+                    " application/octet-stream"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Get Profile Image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns the profile image file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "Profile or image not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Upload a profile image for the given user. Expects a multipart form with the field \"image\".",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Upload Profile Image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Profile Image",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Profile image uploaded successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Image file is required",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save image or update profile picture",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1001,10 +1092,19 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "post_id": {
+                    "description": "Foreign key with index",
                     "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "user": {
+                    "description": "Relation with User",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    ]
                 },
                 "user_id": {
                     "type": "integer"
@@ -1014,10 +1114,16 @@ const docTemplate = `{
         "models.Post": {
             "type": "object",
             "required": [
-                "content",
-                "title"
+                "content"
             ],
             "properties": {
+                "comments": {
+                    "description": "Comments linked to post",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Comment"
+                    }
+                },
                 "content": {
                     "type": "string"
                 },
@@ -1032,9 +1138,6 @@ const docTemplate = `{
                 },
                 "likes": {
                     "type": "integer"
-                },
-                "title": {
-                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -1073,6 +1176,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "profile_picture": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -1120,7 +1226,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "GitConnect API",
-	Description:      "This is the API documentation for GitConnect.",
+	Description:      "API documentation for GitConnect",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

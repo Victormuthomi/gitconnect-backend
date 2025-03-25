@@ -9,9 +9,14 @@ definitions:
       id:
         type: integer
       post_id:
+        description: Foreign key with index
         type: integer
       updated_at:
         type: string
+      user:
+        allOf:
+        - $ref: '#/definitions/models.User'
+        description: Relation with User
       user_id:
         type: integer
     required:
@@ -19,6 +24,11 @@ definitions:
     type: object
   models.Post:
     properties:
+      comments:
+        description: Comments linked to post
+        items:
+          $ref: '#/definitions/models.Comment'
+        type: array
       content:
         type: string
       created_at:
@@ -29,8 +39,6 @@ definitions:
         type: integer
       likes:
         type: integer
-      title:
-        type: string
       updated_at:
         type: string
       user:
@@ -42,7 +50,6 @@ definitions:
         type: integer
     required:
     - content
-    - title
     type: object
   models.Profile:
     properties:
@@ -56,6 +63,8 @@ definitions:
         type: string
       id:
         type: integer
+      profile_picture:
+        type: string
       updated_at:
         type: string
       user_id:
@@ -85,7 +94,7 @@ info:
   contact:
     email: victor@example.com
     name: Victor Muthomi
-  description: This is the API documentation for GitConnect.
+  description: API documentation for GitConnect
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
@@ -721,4 +730,68 @@ paths:
       summary: Update a profile
       tags:
       - Profiles
+  /api/profiles/{userId}/image:
+    get:
+      description: Serve the profile image file for the given user.
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - image/jpeg
+      - ' image/png'
+      - ' image/gif'
+      - ' application/octet-stream'
+      responses:
+        "200":
+          description: Returns the profile image file
+          schema:
+            type: file
+        "404":
+          description: Profile or image not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get Profile Image
+      tags:
+      - Profile
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a profile image for the given user. Expects a multipart
+        form with the field "image".
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Profile Image
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Profile image uploaded successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Image file is required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to save image or update profile picture
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Upload Profile Image
+      tags:
+      - Profile
 swagger: "2.0"
