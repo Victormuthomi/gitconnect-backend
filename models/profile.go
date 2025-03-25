@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -28,14 +29,14 @@ func UpdateProfilePicture(userId string, filename string) error {
 	// Convert userId (string) to uint.
 	id64, err := strconv.ParseUint(userId, 10, 32)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid userId '%s': %v", userId, err)
 	}
 	id := uint(id64)
 
 	var profile Profile
 	// Find the profile using the UserID field.
 	if err := DB.Where("user_id = ?", id).First(&profile).Error; err != nil {
-		return err
+		return fmt.Errorf("failed to find profile for user_id %d: %v", id, err)
 	}
 
 	// Update the profile picture field.
@@ -43,7 +44,7 @@ func UpdateProfilePicture(userId string, filename string) error {
 
 	// Save the updated profile.
 	if err := DB.Save(&profile).Error; err != nil {
-		return err
+		return fmt.Errorf("failed to save updated profile for user_id %d: %v", id, err)
 	}
 
 	return nil
@@ -54,16 +55,16 @@ func GetProfileByID(userId string) (*Profile, error) {
 	// Convert userId (string) to uint.
 	id64, err := strconv.ParseUint(userId, 10, 32)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid userId '%s': %v", userId, err)
 	}
 	id := uint(id64)
 
 	var profile Profile
 	if err := DB.Where("user_id = ?", id).First(&profile).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, err
+			return nil, fmt.Errorf("profile not found for user_id %d", id)
 		}
-		return nil, err
+		return nil, fmt.Errorf("error retrieving profile for user_id %d: %v", id, err)
 	}
 	return &profile, nil
 }
